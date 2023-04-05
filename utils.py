@@ -1,13 +1,19 @@
 import json
 import requests
-
+import os
+from dotenv import load_dotenv
 
 # Загрузка из файла конфига config.json
 def get_settings_form_file() -> dict:
     try:
-        with open('config.json', 'r') as file:
-            data = json.load(file)['CONFIG']
-            return data
+        load_dotenv()
+        data = {
+            'BOT_TOKEN': os.getenv('BOT_TOKEN'),
+            'DB_NAME': os.getenv('DB_NAME'),
+            'OPENWEATHER_TOKEN': os.getenv('OPENWEATHER_TOKEN'),
+            'ADMIN': [int(os.getenv('ADMIN'))],
+        }
+        return data
     except Exception as ex:
         print('Ошибка на стадии инициализации конфига', ex)
 

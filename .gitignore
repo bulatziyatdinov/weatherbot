@@ -1,7 +1,7 @@
 .idea
+.env
 venv
 test.py
 test.json
 bot_db.db
-config.json
 1a1f0920ac232d3252b7a0cf173c3eda
