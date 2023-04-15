@@ -1,7 +1,7 @@
-import json
 import requests
 import os
 from dotenv import load_dotenv
+
 
 # Загрузка из файла конфига config.json
 def get_settings_form_file() -> dict:
@@ -16,6 +16,21 @@ def get_settings_form_file() -> dict:
         return data
     except Exception as ex:
         print('Ошибка на стадии инициализации конфига', ex)
+
+
+# Город по геолокации
+def get_city_lat_lon(lat, lon, token):
+    params = {
+        "appid": str(token),
+        "lang": "ru",
+        "units": "metric",
+        "mode": "JSON",
+        "lat": str(lat),
+        "lon": str(lon),
+    }
+    response = requests.get(f"https://api.openweathermap.org/data/2.5/weather",
+                            params=params).json()
+    return response['name']
 
 
 # Получение погоды
