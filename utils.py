@@ -1,9 +1,14 @@
 import requests
 import os
 from dotenv import load_dotenv
+import json
+
+# Загрузка видов погоды
+with open('weather.json', 'r', encoding='utf-8') as f:
+    weather_picture_list = json.load(f)
 
 
-# Загрузка из файла конфига config.json
+# Загрузка настроек из .env
 def get_settings_form_file() -> dict:
     try:
         load_dotenv()
@@ -20,6 +25,7 @@ def get_settings_form_file() -> dict:
 
 # Город по геолокации
 def get_city_lat_lon(lat, lon, token):
+    # Параметры запроса
     params = {
         "appid": str(token),
         "lang": "ru",
@@ -28,6 +34,7 @@ def get_city_lat_lon(lat, lon, token):
         "lat": str(lat),
         "lon": str(lon),
     }
+    # Запрос API
     response = requests.get(f"https://api.openweathermap.org/data/2.5/weather",
                             params=params).json()
     return response['name']
@@ -35,6 +42,7 @@ def get_city_lat_lon(lat, lon, token):
 
 # Получение погоды
 def get_weather_city(city, token):
+    # Параметры запроса
     params = {
         "q": city,
         "appid": str(token),
@@ -44,11 +52,15 @@ def get_weather_city(city, token):
     }
 
     try:
+        # Запрос API
         response = requests.get(f"https://api.openweathermap.org/data/2.5/weather",
                                 params=params).json()
+
+        # Проверка на статус запроса
         status = int(response['cod'])
         if status == 404 or city.strip().lower() == 'none':
             return 'Город не найден\nПопробуйте поменять свой город через команду /set_city *ваш город*'
+
         elif status == 200:
             weather = response['weather'][0]['description'].capitalize()
 
@@ -67,9 +79,14 @@ def get_weather_city(city, token):
                      f"Влажность: {main['humidity']}%\n" \
                      f"Скорость ветра: {wind} м/с\n" \
                      f"Облачность: {clouds}%"
-            return answer
+
+            picture = weather_picture_list.get(response['weather'][0]["main"], weather_picture_list["Other"])
+
+            return answer, picture
+
         else:
-            return 'Неизвестная ошибка'
+            return 'Неизвестная ошибка', weather_picture_list["Error"]
+
     except Exception as ex:
         print('Ошибка в API', ex)
         return 'Ошибка в API запроса погоды\nПопробуйте воспользоваться сервисом позже'

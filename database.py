@@ -70,4 +70,8 @@ class Database:
 
     # Удаляет пользователя
     def delete_user(self, user_id):
-        pass
+        try:
+            with self.con as cur:
+                cur.execute(f'DELETE FROM users WHERE id = {user_id}')
+        except Exception as ex:
+            print('Ошибка в удалении пользоватля', ex)

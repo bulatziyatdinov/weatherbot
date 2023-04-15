@@ -3,7 +3,7 @@ from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
 from aiogram.types import ContentType
 
-from markups import keyboard
+from markups import keyboard_geo, keyboard_weather
 
 from database import Database
 import utils
@@ -40,7 +40,7 @@ async def start(message: types.Message):
              'Информация использования: /info\n' \
              'Узнать город: /city *город*\n' \
              'Узнать кол-во использований: /nums\n'
-    await bot.send_message(message.chat.id, answer, reply_markup=keyboard)
+    await bot.send_message(message.chat.id, answer, reply_markup=keyboard_geo)
 
 
 @dp.message_handler(content_types=['location'])
@@ -53,7 +53,7 @@ async def handle_location(message: types.Message):
 
 
 @dp.message_handler(commands=['help'])
-async def start(message: types.Message):
+async def help(message: types.Message):
     answer = 'Команды:\n' \
              '------------\n' \
              'Список команд: /help:\n' \
@@ -67,7 +67,7 @@ async def start(message: types.Message):
 
 
 @dp.message_handler(commands=['add_num'])
-async def start(message: types.Message):
+async def add_num(message: types.Message):
     try:
         if message.chat.id in ADMINS:
             db.update_nums_of_using(message.chat.id)
@@ -77,61 +77,82 @@ async def start(message: types.Message):
 
 
 @dp.message_handler(commands=['set_city'])
-async def start(message: types.Message):
+async def set_city(message: types.Message):
     city = ' '.join(message.text.strip().split()[1:])
     answer = db.set_user_city(message.chat.id, city)
     if answer:
-        await bot.send_message(message.chat.id, 'Город успешно выбран!', reply_markup=types.ReplyKeyboardRemove())
+        await bot.send_message(message.chat.id, 'Город успешно выбран!',
+                               reply_markup=types.ReplyKeyboardRemove())
     else:
-        await bot.send_message(message.chat.id, 'Ошибка в выборе города!', reply_markup=types.ReplyKeyboardRemove())
+        await bot.send_message(message.chat.id, 'Ошибка в выборе города!',
+                               reply_markup=types.ReplyKeyboardRemove())
 
 
 @dp.message_handler(commands=['set_city_geo'])
-async def start(message: types.Message):
-    await bot.send_message(message.chat.id, 'Отправьте нам геопозицию', reply_markup=keyboard)
+async def set_city_geo(message: types.Message):
+    await bot.send_message(message.chat.id, 'Отправьте нам геопозицию',
+                           reply_markup=keyboard_geo)
 
 
 @dp.message_handler(commands=['city'])
-async def start(message: types.Message):
+async def city(message: types.Message):
     try:
         answer = db.get_user_city(message.chat.id)
         answer = 'Ваш город:\n> ' + answer
         await bot.send_message(message.chat.id, answer)
     except Exception as ex:
         print('Ошибка в главном файле!', ex)
-        await bot.send_message(message.chat.id, 'Ошибка!', reply_markup=types.ReplyKeyboardRemove())
+        await bot.send_message(message.chat.id, 'Ошибка!',
+                               reply_markup=types.ReplyKeyboardRemove())
 
 
 @dp.message_handler(commands=['nums'])
-async def start(message: types.Message):
+async def nums(message: types.Message):
     try:
         answer = str(db.get_user_nums(message.chat.id))
         answer = 'Вы использовали бота:\n> ' + answer
         await bot.send_message(message.chat.id, answer)
     except Exception as ex:
         print('Ошибка в главном файле!', ex)
-        await bot.send_message(message.chat.id, 'Ошибка!', reply_markup=types.ReplyKeyboardRemove())
+        await bot.send_message(message.chat.id, 'Ошибка!',
+                               reply_markup=types.ReplyKeyboardRemove())
 
 
 @dp.message_handler(commands=['info'])
-async def start(message: types.Message):
+async def info(message: types.Message):
     try:
-        t1 = db.get_user_city(message.chat.id)
-        t2 = str(db.get_user_nums(message.chat.id))
-        answer = 'Ваш город:\n> ' + t1 + '\n'
-        answer += 'Вы использовали бота:\n> ' + t2
+        city = db.get_user_city(message.chat.id)
+        nums = str(db.get_user_nums(message.chat.id))
+        answer = 'Ваш город:\n> ' + city + '\n'
+        answer += 'Вы использовали бота:\n> ' + nums
         await bot.send_message(message.chat.id, answer)
     except Exception as ex:
         print('Ошибка в главном файле!', ex)
-        await bot.send_message(message.chat.id, 'Ошибка!', reply_markup=types.ReplyKeyboardRemove())
+        await bot.send_message(message.chat.id, 'Ошибка!',
+                               reply_markup=types.ReplyKeyboardRemove())
 
 
 @dp.message_handler(commands=['weather'])
-async def start(message: types.Message):
+async def weather(message: types.Message):
     city = db.get_user_city(message.chat.id)
-    answer = utils.get_weather_city(city, OPENWEATHER_TOKEN)
+    answer, picture = utils.get_weather_city(city, OPENWEATHER_TOKEN)
     db.update_nums_of_using(message.chat.id)
-    await bot.send_message(message.chat.id, answer, reply_markup=types.ReplyKeyboardRemove())
+    await bot.send_photo(message.chat.id, photo=picture, caption=answer,
+                         reply_markup=keyboard_weather)
+
+
+@dp.callback_query_handler(text='weather_request')
+async def vote_for_seva_def(message: types.CallbackQuery):
+    city = db.get_user_city(message.from_user.id)
+    answer, picture = utils.get_weather_city(city, OPENWEATHER_TOKEN)
+    db.update_nums_of_using(message.from_user.id)
+    await bot.send_photo(message.from_user.id, photo=picture, caption=answer,
+                         reply_markup=keyboard_weather)
+
+
+@dp.message_handler(content_types=ContentType.PHOTO)
+async def photo(message: types.Message):
+    await message.reply(message)
 
 
 if __name__ == '__main__':

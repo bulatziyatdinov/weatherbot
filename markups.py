@@ -1,7 +1,13 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
-keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
+# Создание клавиатур
+keyboard_geo = ReplyKeyboardMarkup(resize_keyboard=True)
+keyboard_weather = InlineKeyboardMarkup()
 
-button_1 = KeyboardButton(text="Отправить своё местоположение\nТолько для телефонов", request_location=True)
+# Создание кнопок
+button_geo = KeyboardButton(text="Отправить своё местоположение\nТолько для телефонов", request_location=True)
+button_weather = InlineKeyboardButton(text="Узнать погоду", callback_data='weather_request')
 
-keyboard.add(button_1)
+# Добавление кнопок в клавиатуры
+keyboard_geo.add(button_geo)
+keyboard_weather.add(button_weather)
